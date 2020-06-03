@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "512290083267",
+    "firebase_url": "https://dailytwo-f04f4.firebaseio.com",
+    "project_id": "dailytwo-f04f4",
+    "storage_bucket": "dailytwo-f04f4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512290083267:android:0160c421468d9a5d002d76",
+        "android_client_info": {
+          "package_name": "kaan.dailypoemapptwo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "512290083267-lf5vqd9k2bhkebjp8oore75bc2q6otvi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPgn4l-iK0UO-IuzJ1k6NLcm9lCNEMdoA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "512290083267-lf5vqd9k2bhkebjp8oore75bc2q6otvi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
