@@ -1,11 +1,19 @@
 import 'package:dailypoemapptwo/model/FavSiirler.dart';
 import 'package:dailypoemapptwo/model/Siir.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SelectedPoemPage extends StatefulWidget {
   FavSiirler favSiirler = FavSiirler();
-  Siir siirSelected;
-  SelectedPoemPage(this.siirSelected);
+  int id;
+  String name;
+  String poetName;
+  int favCount;
+  bool inView;
+  Siir streamSiir;
+  List<dynamic> lines;
+  Siir siirMonitored;
+  SelectedPoemPage(this.siirMonitored);
   @override
   _SelectedPoemPageState createState() => _SelectedPoemPageState();
 }
@@ -18,132 +26,197 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
       theme: ThemeData(primaryColor: Colors.pink),
       title: "Daily Poem App",
       home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.yellow,
-          title: Center(
-            child: Text(
-              "Daily Poem App",
-              style: TextStyle(color: Colors.black),
-            ),
-          ),
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                  colors: [Colors.pink, Colors.yellow])),
-          child: siirCard(context),
-        ),
-      ),
-    );
-  }
-
-  Widget siirCard(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(5),
-      color: Colors.black.withOpacity(0.4),
-      margin: EdgeInsets.all(20),
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Spacer(),
-              Text(widget.siirSelected.poetName,
-                  style: TextStyle(
-                      color: Colors.white,
-                      letterSpacing: 1,
-                      fontSize: 20,
-                      fontStyle: FontStyle.italic)),
-            ],
-          ),
-          Container(
-            margin: EdgeInsets.only(bottom: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                Text(widget.siirSelected.name,
-                    style: TextStyle(
-                        letterSpacing: 1,
-                        fontSize: 35,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900)),
-              ],
-            ),
-          ),
-          Flexible(
-            flex: 100,
-            child: ListView.builder(
-                itemCount: widget.siirSelected.lines.length,
-                itemBuilder: (context, int index) {
-                  return Align(
-                    alignment: Alignment.center,
-                    child: Text(
-                      widget.siirSelected.lines[index],
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                  );
-                }),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              Text(
-                "${widget.siirSelected.favCount}",
-                style: TextStyle(color: Colors.white),
+          appBar: AppBar(
+            backgroundColor: Colors.yellow,
+            title: Center(
+              child: Text(
+                "Daily Poem App",
+                style: TextStyle(color: Colors.black),
               ),
-              Icon(
-                Icons.favorite,
-                color: Colors.white,
-              )
-            ],
+            ),
           ),
-          Spacer(),
-          RaisedButton(
+          body: Container(
+            decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                    colors: [Colors.pink, Colors.yellow])),
             child: Container(
-              width: 120,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[butonSec(), iconSec()],
-              ),
+              padding: EdgeInsets.all(5),
+              color: Colors.black.withOpacity(0.4),
+              margin: EdgeInsets.all(20),
+              child: futureSiirCard(),
             ),
-            onPressed: () {
-              setState(() {
-                if (widget.favSiirler.favoriSiirler.contains(widget.siirSelected)) {
-                  widget.favSiirler.favoriSiirler.remove(widget.siirSelected);
-                  widget.siirSelected.favCount--;
-                }
-                else{
-                  widget.favSiirler.favoriSiirler.add(widget.siirSelected);
-                  widget.siirSelected.favCount++;
-                }
-              });
-            },
-          )
-        ],
-      ),
+          )),
     );
   }
 
-  Widget butonSec() {
-    if (widget.favSiirler.favoriSiirler.contains(widget.siirSelected)) {
-      return Text("Favoriden Çıkart", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),);
-    } else {
-      return Text("Favorilere Ekle",  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
+  Widget butonSec(DocumentSnapshot doc) {
+    getData(doc);
+    for (int i = 0; i < widget.favSiirler.favoriSiirler.length; i++) {
+      if (widget.favSiirler.favoriSiirler[i].id == widget.siirMonitored.id) {
+        return Text(
+          "Favoriden Çıkart",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        );
+      }
     }
+
+    return Text("Favorilere Ekle",
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
   }
 
-  Widget iconSec(){
-    if (widget.favSiirler.favoriSiirler.contains(widget.siirSelected)) {
-      return Icon(Icons.remove, size: 14,);
-    } else {
-      return Icon(Icons.favorite_border, size: 14,);
+  Widget iconSec(DocumentSnapshot doc) {
+    getData(doc);
+    for (int i = 0; i < widget.favSiirler.favoriSiirler.length; i++) {
+      if (widget.favSiirler.favoriSiirler[i].id == widget.siirMonitored.id) {
+        return Icon(Icons.remove, size: 14);
+      }
     }
+    return Icon(
+      Icons.favorite_border,
+      size: 14,
+    );
+  }
+
+  Widget futureSiirCard() {
+    return StreamBuilder(
+      stream: Firestore.instance
+          .collection("poems")
+          .where("id", isEqualTo: widget.siirMonitored.id)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Column(
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Spacer(),
+                  Text(snapshot.data.documents[0]['poetName'],
+                      style: TextStyle(
+                          color: Colors.white,
+                          letterSpacing: 1,
+                          fontSize: 20,
+                          fontStyle: FontStyle.italic)),
+                ],
+              ),
+              Container(
+                margin: EdgeInsets.only(bottom: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text(snapshot.data.documents[0]['name'],
+                        style: TextStyle(
+                            letterSpacing: 1,
+                            fontSize: 25,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              Flexible(
+                flex: 100,
+                child: ListView.builder(
+                    itemCount: snapshot.data.documents[0]['lines'].length,
+                    itemBuilder: (context, int index) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          snapshot.data.documents[0]['lines'][index],
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    }),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  Text(
+                    "${snapshot.data.documents[0]['favCount']}",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Icon(
+                    Icons.favorite,
+                    color: Colors.white,
+                  )
+                ],
+              ),
+              Spacer(),
+              RaisedButton(
+                child: Container(
+                  width: 120,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      butonSec(snapshot.data.documents[0]),
+                      iconSec(snapshot.data.documents[0])
+                    ],
+                  ),
+                ),
+                onPressed: () {
+                  setState(() {
+                    getData(snapshot.data.documents[0]);
+                    bool varMi = false;
+                    for (int i = 0;
+                        i < widget.favSiirler.favoriSiirler.length;
+                        i++) {
+                      if (widget.favSiirler.favoriSiirler[i].id ==
+                          widget.siirMonitored.id) {
+                        varMi = true;
+                        break;
+                      }
+                    }
+                    if (varMi) {
+                      print(varMi);
+                      getData(snapshot.data.documents[0]);
+                      widget.favSiirler.favoriSiirler.removeWhere(
+                          (item) => item.id == widget.siirMonitored.id);
+                      snapshot.data.documents[0].reference.updateData({
+                        'favCount': snapshot.data.documents[0]['favCount'] - 1
+                      });
+                    } else {
+                      getData(snapshot.data.documents[0]);
+                      widget.favSiirler.favoriSiirler.add(widget.siirMonitored);
+                      snapshot.data.documents[0].reference.updateData({
+                        'favCount': snapshot.data.documents[0]['favCount'] + 1
+                      });
+                    }
+                  });
+                },
+              ),
+            ],
+          );
+        } else if (snapshot.hasError) {
+          return Text("${snapshot.error}");
+        }
+
+        // By default, show a loading spinner.
+        return Center(
+          child: Container(height: 30, child: CircularProgressIndicator()),
+        );
+      },
+    );
+  }
+
+  void getData(DocumentSnapshot doc) {
+    widget.name = doc['name'];
+    widget.id = doc['id'];
+    widget.poetName = doc['poetName'];
+    widget.lines = doc['lines'];
+    widget.favCount = doc['favCount'];
+    widget.inView = doc['inView'];
+    widget.siirMonitored = Siir(
+        id: widget.id,
+        name: widget.name,
+        poetName: widget.poetName,
+        lines: widget.lines,
+        favCount: widget.favCount,
+        inView: widget.inView);
   }
 }

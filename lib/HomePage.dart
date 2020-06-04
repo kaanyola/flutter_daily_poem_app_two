@@ -8,9 +8,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'model/Siir.dart';
 
 class HomePage extends StatefulWidget {
+  int id;
+  String name;
+  String poetName;
+  int favCount;
+  bool inView;
+  Siir streamSiir;
+  List<dynamic> lines;
   Siir siirMonitored;
   Future<Siir> futureSiir;
-  HomePage(this.futureSiir);
+  HomePage(this.streamSiir);
   FavSiirler favSiirler = FavSiirler();
 
   @override
@@ -26,44 +33,53 @@ class _HomePageState extends State<HomePage> {
                 begin: Alignment.bottomLeft,
                 end: Alignment.topRight,
                 colors: [Colors.pink, Colors.yellow])),
-        child: Container(
-          padding: EdgeInsets.all(5),
-          color: Colors.black.withOpacity(0.4),
-          margin: EdgeInsets.all(20),
-          child: futureSiirCard(),
+        child: Column(
+          children: <Widget>[
+            tagContainer(),
+            Flexible(
+                          child: Container(
+                padding: EdgeInsets.all(5),
+                color: Colors.black.withOpacity(0.4),
+                margin: EdgeInsets.all(20),
+                child: futureSiirCard(),
+              ),
+            ),
+          ],
         ));
   }
 
-  Widget siirCard(BuildContext context) {
-    return deneme();
+  Widget butonSec(DocumentSnapshot doc) {
+    getData(doc);
+    for (int i = 0; i < widget.favSiirler.favoriSiirler.length; i++) {
+      if (widget.favSiirler.favoriSiirler[i].id == widget.siirMonitored.id) {
+        return Text(
+          "Favoriden Çıkart",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        );
+      }
+    }
+
+    return Text("Favorilere Ekle",
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
   }
 
-  Widget butonSec(var snapshot) {
-    if (widget.favSiirler.favoriSiirler.contains(snapshot.data)) {
-      return Text(
-        "Favoriden Çıkart",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-      );
-    } else {
-      return Text("Favorilere Ekle",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
+  Widget iconSec(DocumentSnapshot doc) {
+    getData(doc);
+    for (int i = 0; i < widget.favSiirler.favoriSiirler.length; i++) {
+      if (widget.favSiirler.favoriSiirler[i].id == widget.siirMonitored.id) {
+        return Icon(Icons.remove, size: 14);
+      }
     }
-  }
-
-  Widget iconSec(var snapshot) {
-    if (widget.favSiirler.favoriSiirler.contains(snapshot.data)) {
-      return Icon(Icons.remove, size: 14);
-    } else {
-      return Icon(
-        Icons.favorite_border,
-        size: 14,
-      );
-    }
+    return Icon(
+      Icons.favorite_border,
+      size: 14,
+    );
   }
 
   Widget futureSiirCard() {
     return StreamBuilder(
-      stream: Firestore.instance.collection('poems').snapshots(),
+      stream: Firestore.instance.collection("poems")
+.where("inView", isEqualTo: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
@@ -132,18 +148,39 @@ class _HomePageState extends State<HomePage> {
                   width: 120,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[butonSec(snapshot), iconSec(snapshot)],
+                    children: <Widget>[
+                      butonSec(snapshot.data.documents[0]),
+                      iconSec(snapshot.data.documents[0])
+                    ],
                   ),
                 ),
                 onPressed: () {
                   setState(() {
-                    if (widget.favSiirler.favoriSiirler
-                        .contains(snapshot.data)) {
-                      widget.favSiirler.favoriSiirler.remove(snapshot.data);
-                      snapshot.data.documents["favcount"]--;
+                    getData(snapshot.data.documents[0]);
+                    bool varMi = false;
+                    for (int i = 0;
+                        i < widget.favSiirler.favoriSiirler.length;
+                        i++) {
+                      if (widget.favSiirler.favoriSiirler[i].id ==
+                          widget.siirMonitored.id) {
+                        varMi = true;
+                        break;
+                      }
+                    }
+                    if (varMi) {
+                      print(varMi);
+                      getData(snapshot.data.documents[0]);
+                      widget.favSiirler.favoriSiirler.removeWhere(
+                          (item) => item.id == widget.siirMonitored.id);
+                      snapshot.data.documents[0].reference.updateData({
+                        'favCount': snapshot.data.documents[0]['favCount'] - 1
+                      });
                     } else {
-                      widget.favSiirler.favoriSiirler.add(snapshot.data);
-                      snapshot.data.favCount++;
+                      getData(snapshot.data.documents[0]);
+                      widget.favSiirler.favoriSiirler.add(widget.siirMonitored);
+                      snapshot.data.documents[0].reference.updateData({
+                        'favCount': snapshot.data.documents[0]['favCount'] + 1
+                      });
                     }
                   });
                 },
@@ -162,15 +199,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void getData(DocumentSnapshot doc) {
+    widget.name = doc['name'];
+    widget.id = doc['id'];
+    widget.poetName = doc['poetName'];
+    widget.lines = doc['lines'];
+    widget.favCount = doc['favCount'];
+    widget.inView = doc['inView'];
+    widget.siirMonitored = Siir(
+        id: widget.id,
+        name: widget.name,
+        poetName: widget.poetName,
+        lines: widget.lines,
+        favCount: widget.favCount,
+        inView: widget.inView);
+  }
 
-   Widget deneme() {
+  Widget deneme() {
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance.collection("crazy").snapshots(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData || snapshot.data.documents == null) {
-          return Text(snapshot.data.documents.length.toString());}
+          return Text(snapshot.data.documents.length.toString());
+        }
         return ListView(
-          children: snapshot.data.documents.map((DocumentSnapshot document){
+          children: snapshot.data.documents.map((DocumentSnapshot document) {
             return ListTile(
               title: Text(document['name']),
               subtitle: Text(document['status']),
@@ -181,8 +234,52 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  getData() async{
-    return await Firestore.instance.collection('poems').getDocuments();
+  Future getPosts() async {
+    var firestore = Firestore.instance;
+
+    QuerySnapshot qn = await firestore.collection("poems").getDocuments();
+    return qn.documents;
   }
 
+  Widget tagContainer() {
+    return Container(
+      height: 40,
+      child: ListView(
+        padding: EdgeInsets.only(left: 5),
+        scrollDirection: Axis.horizontal,
+        children: getTags(),
+        shrinkWrap: false,
+      ),
+    );
+  }
+
+  List<Widget> getTags() {
+    List<Widget> tags = [];
+    for (int i = 0; i < 7; i++) {
+      tags.add(Container(
+        margin: EdgeInsets.only(left: 10),
+        child: new FlatButton(
+          child: Text(tagList[i],),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18.0),
+            side: BorderSide(width: 0.5)
+          ),
+          onPressed: () {
+
+          },
+        ),
+      ));
+    }
+    return tags;
+  }
+
+  List<String> tagList = [
+    "All",
+    "Today",
+    "Continue watiching",
+    "Unwathced",
+    "Trending",
+    "Programming",
+    "Python"
+  ];
 }

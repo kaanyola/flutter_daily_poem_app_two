@@ -21,6 +21,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Future<Siir> futureSiir;
+  Siir streamSiir;
   
 
   @override
@@ -71,7 +72,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: TabBarView(
           children: <Widget>[
-            HomePage(futureSiir),
+            HomePage(streamSiir),
             FavPage(),
           ],
         ),

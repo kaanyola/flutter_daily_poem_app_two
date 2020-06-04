@@ -3,9 +3,10 @@ class Siir{
   String name;
   String poetName;
   List <dynamic> lines;
+  bool inView;
   int favCount;
 
-  Siir({this.id, this.name, this.poetName, this.lines, this.favCount});
+  Siir({this.id, this.name, this.poetName, this.lines, this.favCount, this.inView});
 
   factory Siir.fromJson(Map<String, dynamic> json){
     return Siir(
@@ -16,4 +17,6 @@ class Siir{
       favCount: json["data"][0]['favCount']
     );
   }
+
+  
 }
