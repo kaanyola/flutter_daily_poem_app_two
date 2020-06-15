@@ -22,10 +22,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Future<Siir> futureSiir;
   Siir streamSiir;
-  
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     futureSiir = fetchSiir();
   }
@@ -72,7 +71,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: TabBarView(
           children: <Widget>[
-            HomePage(streamSiir),
+            HomePage(),
             FavPage(),
           ],
         ),

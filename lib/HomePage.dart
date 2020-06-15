@@ -1,4 +1,5 @@
 import 'package:dailypoemapptwo/model/FavSiirler.dart';
+import 'package:dailypoemapptwo/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dailypoemapptwo/api/siirApi.dart';
 import 'dart:convert';
@@ -8,16 +9,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'model/Siir.dart';
 
 class HomePage extends StatefulWidget {
+  String type = "mutlu";
   int id;
   String name;
   String poetName;
   int favCount;
   bool inView;
-  Siir streamSiir;
-  List<dynamic> lines;
+  List<String> lines;
   Siir siirMonitored;
   Future<Siir> futureSiir;
-  HomePage(this.streamSiir);
   FavSiirler favSiirler = FavSiirler();
 
   @override
@@ -25,6 +25,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  String mood = "mutlu";
+  FirebaseService service;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    service = FirebaseService();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -37,7 +46,7 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             tagContainer(),
             Flexible(
-                          child: Container(
+              child: Container(
                 padding: EdgeInsets.all(5),
                 color: Colors.black.withOpacity(0.4),
                 margin: EdgeInsets.all(20),
@@ -48,7 +57,7 @@ class _HomePageState extends State<HomePage> {
         ));
   }
 
-  Widget butonSec(DocumentSnapshot doc) {
+  Widget butonSec(Siir doc) {
     getData(doc);
     for (int i = 0; i < widget.favSiirler.favoriSiirler.length; i++) {
       if (widget.favSiirler.favoriSiirler[i].id == widget.siirMonitored.id) {
@@ -63,7 +72,7 @@ class _HomePageState extends State<HomePage> {
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
   }
 
-  Widget iconSec(DocumentSnapshot doc) {
+  Widget iconSec(Siir doc) {
     getData(doc);
     for (int i = 0; i < widget.favSiirler.favoriSiirler.length; i++) {
       if (widget.favSiirler.favoriSiirler[i].id == widget.siirMonitored.id) {
@@ -77,9 +86,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget futureSiirCard() {
-    return StreamBuilder(
-      stream: Firestore.instance.collection("poems")
-.where("inView", isEqualTo: true).snapshots(),
+    return FutureBuilder(
+      future: service.getMonitoredPoem(mood),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
@@ -89,7 +97,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Spacer(),
-                  Text(snapshot.data.documents[0]['poetName'],
+                  Text(snapshot.data.poetName,
                       style: TextStyle(
                           color: Colors.white,
                           letterSpacing: 1,
@@ -103,7 +111,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    Text(snapshot.data.documents[0]['name'],
+                    Text(snapshot.data.name,
                         style: TextStyle(
                             letterSpacing: 1,
                             fontSize: 25,
@@ -115,12 +123,12 @@ class _HomePageState extends State<HomePage> {
               Flexible(
                 flex: 100,
                 child: ListView.builder(
-                    itemCount: snapshot.data.documents[0]['lines'].length,
+                    itemCount: snapshot.data.lines.length,
                     itemBuilder: (context, int index) {
                       return Align(
                         alignment: Alignment.topLeft,
                         child: Text(
-                          snapshot.data.documents[0]['lines'][index],
+                          snapshot.data.lines[index],
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -133,7 +141,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
                   Text(
-                    "${snapshot.data.documents[0]['favCount']}",
+                    "${snapshot.data.favCount}",
                     style: TextStyle(color: Colors.white),
                   ),
                   Icon(
@@ -144,47 +152,14 @@ class _HomePageState extends State<HomePage> {
               ),
               Spacer(),
               RaisedButton(
-                child: Container(
-                  width: 120,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      butonSec(snapshot.data.documents[0]),
-                      iconSec(snapshot.data.documents[0])
-                    ],
+                  child: Container(
+                    width: 120,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[Text("")],
+                    ),
                   ),
-                ),
-                onPressed: () {
-                  setState(() {
-                    getData(snapshot.data.documents[0]);
-                    bool varMi = false;
-                    for (int i = 0;
-                        i < widget.favSiirler.favoriSiirler.length;
-                        i++) {
-                      if (widget.favSiirler.favoriSiirler[i].id ==
-                          widget.siirMonitored.id) {
-                        varMi = true;
-                        break;
-                      }
-                    }
-                    if (varMi) {
-                      print(varMi);
-                      getData(snapshot.data.documents[0]);
-                      widget.favSiirler.favoriSiirler.removeWhere(
-                          (item) => item.id == widget.siirMonitored.id);
-                      snapshot.data.documents[0].reference.updateData({
-                        'favCount': snapshot.data.documents[0]['favCount'] - 1
-                      });
-                    } else {
-                      getData(snapshot.data.documents[0]);
-                      widget.favSiirler.favoriSiirler.add(widget.siirMonitored);
-                      snapshot.data.documents[0].reference.updateData({
-                        'favCount': snapshot.data.documents[0]['favCount'] + 1
-                      });
-                    }
-                  });
-                },
-              ),
+                  onPressed: () {}),
             ],
           );
         } else if (snapshot.hasError) {
@@ -199,13 +174,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void getData(DocumentSnapshot doc) {
-    widget.name = doc['name'];
-    widget.id = doc['id'];
-    widget.poetName = doc['poetName'];
-    widget.lines = doc['lines'];
-    widget.favCount = doc['favCount'];
-    widget.inView = doc['inView'];
+  void getData(Siir doc) {
+    widget.name = doc.name;
+    widget.id = doc.id;
+    widget.poetName = doc.poetName;
+    widget.lines = doc.lines;
+    widget.favCount = doc.favCount;
+    widget.inView = doc.inView;
     widget.siirMonitored = Siir(
         id: widget.id,
         name: widget.name,
@@ -255,17 +230,18 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> getTags() {
     List<Widget> tags = [];
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 3; i++) {
       tags.add(Container(
         margin: EdgeInsets.only(left: 10),
         child: new FlatButton(
-          child: Text(tagList[i],),
+          child: Text(tagList[i]),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18.0),
-            side: BorderSide(width: 0.5)
-          ),
+              borderRadius: BorderRadius.circular(18.0),
+              side: BorderSide(width: 0.5)),
           onPressed: () {
-
+            setState(() {
+              widget.type = tagList[i];
+            });
           },
         ),
       ));
@@ -274,12 +250,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> tagList = [
-    "All",
-    "Today",
-    "Continue watiching",
-    "Unwathced",
-    "Trending",
-    "Programming",
-    "Python"
+    "mutlu",
+    "umut",
+    "hüzün",
   ];
 }

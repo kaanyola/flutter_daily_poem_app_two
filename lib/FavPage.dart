@@ -6,14 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:dailypoemapptwo/DenemeYapalim.dart';
 
 class FavPage extends StatefulWidget {
-  List<Siir> favPoems;
-  FavSiirler favSiirler = FavSiirler();
-
   @override
   _FavPageState createState() => _FavPageState();
 }
 
 class _FavPageState extends State<FavPage> {
+  FavSiirler favSiirler;
+  bool isHeaderClose = false;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    favSiirler = FavSiirler();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -44,7 +51,7 @@ class _FavPageState extends State<FavPage> {
   }
 
   Widget favList() {
-    if (widget.favSiirler.favoriSiirler.length == 0) {
+    if (favSiirler.favoriSiirler.length == 0) {
       return Text(
         "Favoriniz bulunmamaktadır.",
         style: TextStyle(fontSize: 25),
@@ -52,10 +59,13 @@ class _FavPageState extends State<FavPage> {
     } else {
       return Expanded(
         child: ListView.builder(
-            itemCount: widget.favSiirler.favoriSiirler.length,
+            itemCount: favSiirler.favoriSiirler.length,
             itemBuilder: (context, int index) {
               return Container(
-                decoration: BoxDecoration(border: Border.all()),
+                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(width: 3)),
                 child: ListTile(
                   onTap: () {
                     setState(() {
@@ -63,32 +73,38 @@ class _FavPageState extends State<FavPage> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => SelectedPoemPage(
-                                      widget.favSiirler.favoriSiirler[index])))
+                                      favSiirler.favoriSiirler[index].id)))
                           .then((value) {
                         setState(() {});
                       });
                     });
                   },
                   title: Text(
-                    widget.favSiirler.favoriSiirler[index].name,
+                    favSiirler.favoriSiirler[index].name,
                     style: TextStyle(fontSize: 22),
                   ),
                   subtitle: Text(
-                    widget.favSiirler.favoriSiirler[index].poetName,
+                    favSiirler.favoriSiirler[index].poetName,
                     style: TextStyle(fontSize: 16),
                   ),
                   leading: CircleAvatar(
-                    child: Text(widget.favSiirler.favoriSiirler[index].name[0]),
+                    child: Text(favSiirler.favoriSiirler[index].name[0]),
                     backgroundColor: Colors.black.withOpacity(0.7),
                   ),
                   trailing: RaisedButton(
-                      color: Colors.black.withOpacity(0.7),
-                      child: Icon(Icons.remove, color: Colors.white,),
-                      onPressed: (){
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => DenemeYapalim()));
-                      },
+                    color: Colors.black.withOpacity(0.7),
+                    child: Icon(
+                      Icons.remove,
+                      color: Colors.white,
                     ),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => DenemeYapalim()));
+                    },
                   ),
+                ),
               );
             }),
       );
@@ -100,7 +116,7 @@ class _FavPageState extends State<FavPage> {
             context,
             MaterialPageRoute(
                 builder: (context) =>
-                    SelectedPoemPage(widget.favSiirler.favoriSiirler[index])))
+                    SelectedPoemPage(favSiirler.favoriSiirler[index].id)))
         .then((value) {
       setState(() {});
     });

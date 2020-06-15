@@ -1,24 +1,35 @@
 import 'package:dailypoemapptwo/model/FavSiirler.dart';
 import 'package:dailypoemapptwo/model/Siir.dart';
+import 'package:dailypoemapptwo/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SelectedPoemPage extends StatefulWidget {
   FavSiirler favSiirler = FavSiirler();
   int id;
+  int sendedId;
   String name;
   String poetName;
   int favCount;
   bool inView;
   Siir streamSiir;
-  List<dynamic> lines;
+  List<String> lines;
   Siir siirMonitored;
-  SelectedPoemPage(this.siirMonitored);
+  SelectedPoemPage(this.sendedId);
   @override
   _SelectedPoemPageState createState() => _SelectedPoemPageState();
 }
 
 class _SelectedPoemPageState extends State<SelectedPoemPage> {
+  String mood = "mutlu";
+  FirebaseService service;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    service = FirebaseService();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -80,11 +91,8 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
   }
 
   Widget futureSiirCard() {
-    return StreamBuilder(
-      stream: Firestore.instance
-          .collection("poems")
-          .where("id", isEqualTo: widget.siirMonitored.id)
-          .snapshots(),
+    return FutureBuilder(
+      future: service.getSelectedPoem(widget.sendedId),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
@@ -94,7 +102,7 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   Spacer(),
-                  Text(snapshot.data.documents[0]['poetName'],
+                  Text(snapshot.data.poetName,
                       style: TextStyle(
                           color: Colors.white,
                           letterSpacing: 1,
@@ -108,7 +116,7 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    Text(snapshot.data.documents[0]['name'],
+                    Text(snapshot.data.name,
                         style: TextStyle(
                             letterSpacing: 1,
                             fontSize: 25,
@@ -120,12 +128,12 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
               Flexible(
                 flex: 100,
                 child: ListView.builder(
-                    itemCount: snapshot.data.documents[0]['lines'].length,
+                    itemCount: snapshot.data.lines.length,
                     itemBuilder: (context, int index) {
                       return Align(
                         alignment: Alignment.topLeft,
                         child: Text(
-                          snapshot.data.documents[0]['lines'][index],
+                          snapshot.data.lines[index],
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -138,7 +146,7 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
                   Text(
-                    "${snapshot.data.documents[0]['favCount']}",
+                    "${snapshot.data.favCount}",
                     style: TextStyle(color: Colors.white),
                   ),
                   Icon(
@@ -153,10 +161,7 @@ class _SelectedPoemPageState extends State<SelectedPoemPage> {
                   width: 120,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      butonSec(snapshot.data.documents[0]),
-                      iconSec(snapshot.data.documents[0])
-                    ],
+                    children: <Widget>[Text("")],
                   ),
                 ),
                 onPressed: () {
